@@ -27,27 +27,28 @@ class _ImageListViewState extends State<ImageListView> {
 
   @override
   void initState() {
-    _scrollController.addListener(() {
-      if (!_scrollController.position.atEdge) {
-        _autoScroll();
-        //adding to list
-        WidgetsBinding.instance!.addPostFrameCallback((_) {
-          _autoScroll();
-        });
+    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+      if (_scrollController.hasClients) {
+        double minScrollExtent = _scrollController.position.minScrollExtent;
+        double maxScrollExtent = _scrollController.position.maxScrollExtent;
+        animateToMaxMin(maxScrollExtent, minScrollExtent, maxScrollExtent, 25,
+            _scrollController);
       }
     });
     super.initState();
   }
 
-  void _autoScroll() {
-    final currentScrollPosition = _scrollController.offset;
-    final scrollEndPosition = _scrollController.position.maxScrollExtent;
-    scheduleMicrotask(() {
-      _scrollController.animateTo(
-          currentScrollPosition == scrollEndPosition ? 0 : scrollEndPosition,
-          duration: const Duration(seconds: 10),
-          curve: Curves.linear);
-    });
+  animateToMaxMin(double max, double min, double direction, int seconds,
+      ScrollController scrollController) {
+    if(_scrollController.hasClients) {
+      scrollController
+          .animateTo(direction,
+          duration: Duration(seconds: seconds), curve: Curves.linear)
+          .then((value) {
+        direction = direction == max ? min : max;
+        animateToMaxMin(max, min, direction, seconds, scrollController);
+      });
+    }
   }
 
   @override
@@ -61,7 +62,7 @@ class _ImageListViewState extends State<ImageListView> {
             controller: _scrollController,
             itemCount: 5,
             itemBuilder: (context, index) {
-              return CachedNetworkImage(
+              return /*CachedNetworkImage(
                   imageUrl: urls[widget.startIndex + index],
                   imageBuilder: (context, imageProvider) {
                     return Container(
@@ -76,7 +77,20 @@ class _ImageListViewState extends State<ImageListView> {
                         ),
                       ),
                     );
-                  });
+                  })*/
+                Container(
+                  margin: const EdgeInsets.only(
+                      right: 8.0, left: 8.0, top: 10.0),
+                  height: MediaQuery.of(context).size.height * 0.40,
+              decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20.0)),
+                  child: Image.network(
+                    urls[widget.startIndex + index],
+                    width: MediaQuery.of(context).size.width * 0.90,
+                    fit: BoxFit.cover,
+                  ),
+                )
+                ;
             },
           )),
     );
